@@ -1,9 +1,17 @@
 import express from "express";
 import "dotenv/config";
 import { connectDb } from "./db/client.js";
+import usersRouter from "./routes/users.js";
+import cors from "cors";
 
 const app = express();
 const port = 8000;
+
+app.use(cors());
+
+app.use(express.json());
+app.use("/discover", usersRouter);
+
 
 const startServer = async() => {
   await connectDb();
