@@ -1,5 +1,5 @@
 import mongoose, { mongo } from "mongoose";
-import {skillSchema} from "./Skill.js";
+import Skill from "./Skill.js";
 const emailRegexp = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
 
 const userSchema = new mongoose.Schema({

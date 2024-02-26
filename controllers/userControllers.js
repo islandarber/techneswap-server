@@ -25,7 +25,18 @@ export const createUser = async (req, res) => {
     const user = await User.create({firstName, lastName, email, password});
     res.status(201).json(user);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 }//endpoint to create a user
+
+export const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const {firstName, lastName, email, location, skills, needs, visibility} = req.body;
+  try {
+    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility}, {new: true});
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}//endpoint to update a user
 
