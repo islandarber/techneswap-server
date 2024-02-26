@@ -19,3 +19,13 @@ export const getUser = async (req, res) => { //endpoint to get a single user
   }
 }
 
+export const createUser = async (req, res) => {
+  const {firstName, lastName, email, password} = req.body;
+  try {
+    const user = await User.create({firstName, lastName, email, password});
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}//endpoint to create a user
+
