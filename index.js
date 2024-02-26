@@ -11,7 +11,7 @@ const port = 8000;
 app.use(cors());
 
 app.use(express.json());
-app.use("/discover", usersRouter);
+app.use("/users", usersRouter);
 app.use("/skills", skillsRouter);
 
 
