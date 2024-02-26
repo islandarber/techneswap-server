@@ -40,3 +40,21 @@ export const updateUser = async (req, res) => {
   }
 }//endpoint to update a user
 
+
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email, password });
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+    }
+    if (user.password !== password) {
+      res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    res.status(200).json(user);
+        
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}//endpoint to login a user
