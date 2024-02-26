@@ -3,7 +3,7 @@ import {getUsers, getUser, createUser, updateUser, loginUser} from '../controlle
 
 const usersRouter = express.Router();
 
-usersRouter.get('/all', getUsers);
+usersRouter.get('/', getUsers);
 usersRouter.get('/:id', getUser);
 usersRouter.post('/create', createUser);
 usersRouter.put('/update/:id', updateUser);
