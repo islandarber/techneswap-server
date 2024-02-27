@@ -3,7 +3,7 @@ import {getSkills, createSkill} from "../controllers/skillControllers.js";
 
 const skillsRouter = express.Router();
 
-skillsRouter.get("/", getSkills);
+skillsRouter.get("/:id", getSkills);
 skillsRouter.post("/new", createSkill);
 
 export default skillsRouter;
