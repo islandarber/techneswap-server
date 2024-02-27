@@ -2,7 +2,7 @@ import User from '../models/User.js';
 
 export const getUsers = async (req, res) => { //endpoint to get all users
   try {
-    const users = await User.find().populate("skills");
+    const users = await User.find().populate("skill");
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -12,7 +12,7 @@ export const getUsers = async (req, res) => { //endpoint to get all users
 export const getUser = async (req, res) => { //endpoint to get a single user
   try {
     const { id } = req.params;
-    const user = await User.findById(id).populate("skills");
+    const user = await User.findById(id).populate("skill");
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,7 +33,7 @@ export const updateUser = async (req, res) => {
   const { id } = req.params;
   const {firstName, lastName, email, location, skills, needs, visibility} = req.body;
   try {
-    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility}, {new: true});
+    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility}, {new: true}).populate('skills');
     res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });

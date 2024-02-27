@@ -23,13 +23,17 @@ const userSchema = new mongoose.Schema({
   location: {
     type: String,
   },
-  skills: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Skill",
+  skills:[{
+    name: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Skill",
+    }
   }],
   needs: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Skill",
+    name: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Skill",
+    }
   }],
   visibility: {
     type: Boolean,

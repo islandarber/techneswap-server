@@ -3,6 +3,7 @@ import "dotenv/config";
 import { connectDb } from "./db/client.js";
 import usersRouter from "./routes/users.js";
 import skillsRouter from "./routes/skills.js";
+import categoriesRouter from "./routes/categories.js";
 import cors from "cors";
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/users", usersRouter);
 app.use("/skills", skillsRouter);
+app.use("/categories", categoriesRouter);
 
 
 const startServer = async() => {
