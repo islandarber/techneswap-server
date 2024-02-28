@@ -1,5 +1,4 @@
 import User from '../models/User.js';
-import Skill from '../models/Skill.js';
 
 
 
@@ -9,7 +8,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   const {  field, category, keyword } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
 
 
-  const {skills, needs} = req.body; // when a user is logged in and has skills and needs
+  const {skills, needs, excludeUserId} = req.body; // when a user is logged in and has skills and needs
 
   console.log("req.query", req.query);
   console.log("req.body", req.body);
@@ -28,33 +27,30 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   };
   
 
-  if (skills || needs) { // First we check if the user has skills or needs which will be sent to the body
-
-    if (skills) { // If the user only has skills, we will find users who need those skills
-      
+  if (skills || needs) {
+    if (skills && !needs) {
       try {
-        const users = await User.find({needs: { $in: skills }}).populate("skills needs");
+        const users = await User.find({ needs: { $in: skills }, _id: { $ne: excludeUserId } }).populate("skills needs");
         checkUser(users, res);
       } catch (error) {
         res.status(500).json({ message: error.message });
       }
-    } else if (needs){ // If the user only has needs, we will find users who have those skills
+    } else if (needs && !skills) {
       try {
-        const users = await User.find({skills: { $in: needs }}).populate("skills needs");
+        const users = await User.find({ skills: { $in: needs }, _id: { $ne: excludeUserId } }).populate("skills needs");
         checkUser(users, res);
       } catch (error) {
         res.status(500).json({ message: error.message });
       }
-    }else if (skills && needs) { // If the user has both skills and needs, we will find users who have those skills and need the skills of the user
+    } else if (skills && needs) {
       try {
-        const users = await User.find({skills: { $in: needs }, needs: { $in: skills }}).populate("skills needs");
+        const users = await User.find({ skills: { $in: needs }, needs: { $in: skills }, _id: { $ne: excludeUserId } }).populate("skills needs");
         checkUser(users, res);
       } catch (error) {
         res.status(500).json({ message: error.message });
       }
     }
-
-  } else { // If the user chooses to search for users by category, field or keyword:
+  }else { // If the user chooses to search for users by category, field or keyword:
   
 
   if (category || field || keyword) { // We check if there is a category, field or keyword
