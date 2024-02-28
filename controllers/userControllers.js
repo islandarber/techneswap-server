@@ -43,9 +43,10 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
       }
     }
 
-  } else if (req.body.length === 0) {
+  } else {
   
 
+    console.log("Iam here: else if (req.body.length === 0)");
 
   if (!category && !keyword && !req.body) {
     return res.status(400).json({ message: 'Please provide a filter' });
@@ -227,6 +228,7 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
       }
 
       checkUser(users, res);
+  }
   }else {
     // The case if there is no category, field or keyword and we just want to get all users:
       try {
@@ -235,7 +237,6 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  }
   }}
 };
 
