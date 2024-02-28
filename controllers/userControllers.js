@@ -7,15 +7,17 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   
   
   const {  field, category, keyword } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
-  
-  console.log("Iam here", req.query);
+
 
   const {skills, needs} = req.body; // when a user is logged in and has skills and needs
+
+  console.log("req.query", req.query);
+  console.log("req.body", req.body);
   
-  
-  if (!category && !keyword && !req.body) { // we need have at least one of these to filter the users
-    return res.status(400).json({ message: 'Please provide a filter' });
+  if (field !== undefined && category === undefined && keyword === undefined && Object.keys(req.query).length === 1 && Object.keys(req.body).length === 0) {
+    return res.status(400).json({ message: 'If field parameter is provided, please include additional filters like category, keyword, or body' });
   }
+  
 
   const checkUser = (user, res) => { // function to check if a user exists and return the user or a message
     if (!user || user.length === 0) {
@@ -29,7 +31,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   if (skills || needs) { // First we check if the user has skills or needs which will be sent to the body
 
     if (skills) { // If the user only has skills, we will find users who need those skills
-      console.log("Iam where you put me");
+      
       try {
         const users = await User.find({needs: { $in: skills }}).populate("skills needs");
         checkUser(users, res);
@@ -58,12 +60,12 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   if (category || field || keyword) { // We check if there is a category, field or keyword
 
     
-    if (keyword) { // Cases when there is a keyword
+    if (keyword && !category) { // Cases when there is a keyword
       
       if (field) { //The case if there is a keyword+field:
 
          // If the field is skills, we will find users who have those skills
-        
+        console.log("Iam here after if (field) { //The case if there is a keyword+field:"); 
 
         try {
           
@@ -99,6 +101,8 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
         }
 
       }else {
+
+        console.log("Iam here The case if there is only keyword") 
         //The case if there is only keyword:
       try {
         const pipeline = [
@@ -141,7 +145,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
       }
     }
     } else if (category) { 
-      if (field) { // The case if there is a category+field:
+      if (field && !keyword) { // The case if there is a category+field:
 
         // const fieldMatchPipeline = [
         //   ...categoryMatchPipeline, // We are using the spread operator to add the categoryMatchPipeline to the fieldMatchPipeline.
@@ -162,6 +166,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
 
         // users = await User.aggregate(fieldMatchPipeline);
         
+        console.log("Iam here The case if there is a category+field:");
         try {
           
           const pipeline = [
@@ -196,8 +201,9 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
         }
 
 
-      } else if (keyword) { // The case if there is a category+keyword:
+      } else if (keyword && !field) { // The case if there is a category+keyword:
 
+        console.log("Iam here The case if there is a category+keyword:");
         const pipeline = [
           {
             $lookup: {
@@ -235,10 +241,48 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           }
         ];
 
-        const users = await User.aggregate(keywordMatchPipeline);
+        const users = await User.aggregate(pipeline);
         checkUser(users, res);
 
-      } else {
+      } else if (keyword && field) { // The case if there is a category+field+keyword:
+
+        console.log("Iam here The case if there is a category+field+keyword");
+        const pipeline = [
+          {
+            $lookup: {
+              from: 'skills', 
+              localField: field, // The field in users collection
+              foreignField: '_id', // The field in skills collection
+              as: 'populatedfield', // Alias for populated field
+            }
+          },
+          {
+            $lookup: {
+              from: 'categories', 
+              localField: 'populatedfield.category',
+              foreignField: '_id',
+              as: 'populatedfieldCategory',
+            }
+          },
+          {
+            $match: {
+              $or: [
+                { firstName: { $regex: keyword, $options: 'i' } },
+                { lastName: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } },
+                { location: { $regex: keyword, $options: 'i' } },
+                { 'populatedfield.name': { $regex: keyword, $options: 'i' } },
+                { 'populatedfieldCategory.name': category },
+              ]
+            }
+          }
+        ];
+
+        const users = await User.aggregate(pipeline);
+        checkUser(users, res);
+      
+      
+      }else {
         // if its just a category
         const pipeline = [
           {
