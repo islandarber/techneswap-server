@@ -2,45 +2,12 @@ import User from '../models/User.js';
 import Skill from '../models/Skill.js';
 
 
-// export const getUsersFiltered = async (req, res) => {
-//   const { category, field, keyword } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
-
-//   try {
-//     if (keyword) {
-//       const users = await User.find({
-//         $or: [
-//           { firstName: { $regex: keyword, $options: 'i' } },
-//           { lastName: { $regex: keyword, $options: 'i' } },
-//           { email: { $regex: keyword, $options: 'i' } },
-//           { location: { $regex: keyword, $options: 'i' } },
-//           { 'skills.name': { $regex: keyword, $options: 'i' } },
-//           { 'needs.name': { $regex: keyword, $options: 'i' } },
-//         ],
-//       }).populate('skills needs');
-
-//       console.log(users);
-
-//       if (users.length === 0) {
-//         return res.status(404).json({ message: 'No user found' });
-//       } else {
-//         return res.json(users);
-//       }
-//     }
-
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-
-
 
 export const getUsers = async (req, res) => { //endpoint to get all users &/ filtered by skills or category or keyword.
   const {  field, category, keyword } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
+  const {skills, needs} = req.body;
 
-  if (!category && !keyword) {
-    return res.status(400).json({ message: 'Please provide a category or a keyword' });
-  }
+  
 
   const checkUser = (user,res) => {
     if (user.length === 0) {
@@ -49,6 +16,41 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
       return res.json(user);
     }
   };
+
+  if (skills || needs) {
+
+    if (skills) {
+      console.log("Iam where you put me");
+      try {
+        const users = await User.find({needs: { $in: skills }}).populate("skills needs");
+        checkUser(users, res);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    } else if (needs){
+      try {
+        const users = await User.find({skills: { $in: needs }}).populate("skills needs");
+        checkUser(users, res);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }else if (skills && needs) {
+      try {
+        const users = await User.find({skills: { $in: needs }, needs: { $in: skills }}).populate("skills needs");
+        checkUser(users, res);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    }
+
+  } else if (req.body.length === 0) {
+  
+
+
+  if (!category && !keyword && !req.body) {
+    return res.status(400).json({ message: 'Please provide a filter' });
+  }
+
 
   if (category || field || keyword) {
 
@@ -227,14 +229,14 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
       checkUser(users, res);
   }else {
     // The case if there is no category, field or keyword and we just want to get all users:
-    try {
+      try {
       const users = await User.find().populate("skills needs");
       checkUser(users ,res);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   }
-  }
+  }}
 };
 
 export const getUser = async (req, res) => { //endpoint to get a single user
