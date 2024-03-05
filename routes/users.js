@@ -5,8 +5,7 @@ const usersRouter = express.Router();
 
 usersRouter.get('/', getUsers);
 usersRouter.get('/:id', getUser);
-// usersRouter.get('/filter', getUsersFiltered);
-usersRouter.post('/create', createUser);
+usersRouter.post('/register', createUser);
 usersRouter.put('/update/:id', updateUser);
 usersRouter.post('/login', loginUser);
 
