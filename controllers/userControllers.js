@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import Skill from '../models/Skill.js';
+import cloudinary from '../db/configCloudinary.js';
 
 
 
@@ -46,7 +46,7 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
   } else {
   
 
-    console.log("Iam here: else if (req.body.length === 0)");
+
 
   if (!category && !keyword && !req.body) {
     return res.status(400).json({ message: 'Please provide a filter' });
@@ -243,7 +243,7 @@ export const getUsers = async (req, res) => { //endpoint to get all users &/ fil
 export const getUser = async (req, res) => { //endpoint to get a single user
   try {
     const { id } = req.params;
-    const user = await User.findById(id).populate("skill");
+    const user = await User.findById(id).populate("skills needs");
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -263,9 +263,31 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   const { id } = req.params;
   const {firstName, lastName, email, location, skills, needs, visibility} = req.body;
+  let imageUrl = '';
+
+
 
   try {
-    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility}, {new: true}).populate('skills needs');
+    let imageUrl = '';
+
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream({
+              //Specify the folder in Cloudinary to store the image. In my case, I call it films since all images stored are gonna be related to this topic
+              folder: 'users',
+          }, (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+          });
+          // The file's data is sent to Cloudinary. req.file.buffer will contain the file's data as a binary buffer, which is what you're uploading. 
+          //The .end() method on the upload stream is used to write this buffer to the stream, initiating the upload process.
+          uploadStream.end(req.file.buffer);
+      });
+      // Once the promise resolves, the result object contains details about the uploaded file, including its URL on Cloudinary's servers. After the upload is successful, we store the image URL returned by Cloudinary
+      imageUrl = result.url; 
+  }
+
+    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility, img: imageUrl}, {new: true}).populate('skills needs');
 
     console.log("updated user", user)
     res.status(200).json(user);
