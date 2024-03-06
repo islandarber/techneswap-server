@@ -73,6 +73,12 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
         console.log("Iam here after if (field) { //The case if there is a keyword+field:"); 
 
         try {
+          let otherField = '';
+          if (field === 'skills') {
+            otherField = 'needs';
+          }else if (field === 'needs') {
+            otherField = 'skills';
+          }
           
           const pipeline = [
             {
@@ -81,6 +87,14 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                 localField: field, // The field in the users collection
                 foreignField: '_id', // The field in the skills collection
                 as: 'populatedfield', // The alias for the populated field
+              }
+            },
+            {
+              $lookup : {
+                from: 'skills',
+                localField: otherField,
+                foreignField: '_id',
+                as: 'populatedfield2',
               }
             },
             {
@@ -93,7 +107,30 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                   { 'populatedfield.name': { $regex: keyword, $options: 'i' } },
                 ]
               }
+            },
+            {
+              $project: { // We are using the project operator to project the fields we want to display
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+                location: 1,
+                skills: {
+                  $map: {
+                    input: '$populatedfield',
+                    as: 'skill',
+                    in: '$$skill.name'
+                  }
+                },
+                needs: {
+                  $map: {
+                    input: '$populatedfield2',
+                    as: 'need',
+                    in: '$$need.name'
+                  }
+                }
+              }
             }
+
           ];
 
           const users = await User.aggregate(pipeline);
@@ -138,6 +175,28 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                 { 'populatedNeeds.name': { $regex: keyword, $options: 'i' } },
               ]
             }
+          },
+          {
+            $project: {
+              _id: 1,
+              firstName: 1,
+              lastName: 1,
+              location: 1,
+              skills: {
+                $map: {
+                  input: '$populatedSkills',
+                  as: 'skill',
+                  in: '$$skill.name'
+                }
+              },
+              needs: {
+                $map: {
+                  input: '$populatedNeeds',
+                  as: 'need',
+                  in: '$$need.name'
+                }
+              }
+            }
           }
         ];
     
@@ -152,49 +211,73 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
     } else if (category) { 
       if (field && !keyword) { // The case if there is a category+field:
 
-        // const fieldMatchPipeline = [
-        //   ...categoryMatchPipeline, // We are using the spread operator to add the categoryMatchPipeline to the fieldMatchPipeline.
-        //   {
-        //     $lookup: {
-        //       from: field,
-        //       localField: 'skills',
-        //       foreignField: '_id',
-        //       as: 'populatedField',
-        //     },
-        //   },
-        //   {
-        //     $match: {
-        //       'populatedField.category': category,
-        //     },
-        //   },
-        // ];
-
-        // users = await User.aggregate(fieldMatchPipeline);
         
         console.log("Iam here The case if there is a category+field:");
         try {
+
+          let otherField = '';
+          if (field === 'skills') {
+
+          otherField = 'needs'; 
+          }else if (field === 'needs') {
+            otherField = 'skills';
+          }
           
           const pipeline = [
             {
               $lookup: {
-                from: 'skills', // Here we join the users collection with the skills collection
-                localField: field, // The field in the users collection
-                foreignField: '_id', // The field in the skills collection
-                as: 'populatedfield', 
+                from: 'skills',
+                localField: field,
+                foreignField: '_id',
+                as: 'populatedfield1'
               }
             },
-            {$lookup: {
-                    from: 'categories', // Here we join the populated field with the categories collection
-                    localField: 'populatedfield.category', // The field in the populated field
-                    foreignField: '_id', // The field in the categories collection
-                    as: 'populatedfieldCategory',
-                  }},
+            {
+              $lookup: {
+                from: 'skills',
+                localField: otherField,
+                foreignField: '_id',
+                as: 'populatedfield2'
+              }
+            },
+            {
+              $lookup: {
+                from: 'categories',
+                localField: 'populatedfield1.category',
+                foreignField: '_id',
+                as: 'populatedfieldCategory',
+              }
+            },
             {
               $match: {
-                'populatedfieldCategory': { $elemMatch: { 'name': category } }
+                $or: [
+                  {'populatedfieldCategory': { $elemMatch: { 'name': category } }},
+                  {'populatedfield2.populatedfieldCategory': { $elemMatch: { 'name': category } }}
+                ]
+              }
+            },
+            {
+              $project: {
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+                location: 1,
+                skills: {
+                  $map: {
+                    input: '$populatedfield1',
+                    as: 'skill',
+                    in: '$$skill.name'
+                  }
+                },
+                needs: {
+                  $map: {
+                    input: '$populatedfield2',
+                    as: 'need',
+                    in: '$$need.name'
+                  }
+                }
               }
             }
-                  
           ];
 
            const users = await User.aggregate(pipeline);
@@ -207,7 +290,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
 
 
       } else if (keyword && !field) { // The case if there is a category+keyword:
-
+        
         console.log("Iam here The case if there is a category+keyword:");
         const pipeline = [
           {
@@ -250,17 +333,31 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
         checkUser(users, res);
 
       } else if (keyword && field) { // The case if there is a category+field+keyword:
-
-        console.log("Iam here The case if there is a category+field+keyword");
+        let otherField = '';
+        if (field === 'skills') {
+          otherField = 'needs';
+        }else if (field === 'needs') {
+          otherField = 'skills';
+        }
+        console.log("Iam here The case if there is a category+field+keyword", field, category, keyword);
         const pipeline = [
           {
             $lookup: {
               from: 'skills', 
               localField: field, // The field in users collection
               foreignField: '_id', // The field in skills collection
-              as: 'populatedfield', // Alias for populated field
+              as: 'populatedfield1', // Alias for populated field
             }
           },
+          {
+            $lookup: {
+              from: 'skills',
+              localField: otherField,
+              foreignField: '_id',
+              as: 'populatedfield2',
+            }
+          },
+
           {
             $lookup: {
               from: 'categories', 
@@ -279,6 +376,28 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                 { 'populatedfield.name': { $regex: keyword, $options: 'i' } },
                 { 'populatedfieldCategory.name': category },
               ]
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              firstName: 1,
+              lastName: 1,
+              location: 1,
+              skills: {
+                $map: {
+                  input: '$populatedfield1',
+                  as: 'skill',
+                  in: '$$skill.name'
+                }
+              },
+              needs: {
+                $map: {
+                  input: '$populatedfield2',
+                  as: 'need',
+                  in: '$$need.name'
+                }
+              }
             }
           }
         ];
@@ -324,6 +443,29 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                 { 'populatedSkillsCategory.name': category },
                 { 'populatedNeedsCategory.name': category },
               ]
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              firstName: 1,
+              lastName: 1,
+              location: 1,
+              skills: {
+                $map: {
+                  input: '$populatedSkills',
+                  as: 'skill',
+                  in: '$$skill.name'
+                }
+              },
+              needs: {
+                $map: {
+                  input: '$populatedNeeds',
+                  as: 'need',
+                  in: '$$need.name'
+                }
+              }
+            
             }
           }
         ];
