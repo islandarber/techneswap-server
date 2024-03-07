@@ -498,7 +498,9 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const {firstName, lastName, email, location, skills, needs, visibility} = req.body;
+  const {firstName, lastName, email, location, visibility} = req.body;
+  const skills = JSON.parse(req.body.skills);
+  const needs = JSON.parse(req.body.needs);
   let imageUrl = '';
 
   console.log("req.file", req.file);
@@ -527,7 +529,7 @@ export const updateUser = async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    console.log("error", error);
+    console.log(error)
     res.status(500).json({ message: error.message });
   }
 
