@@ -7,13 +7,11 @@ import cloudinary from '../db/configCloudinary.js';
 export const getUsers = async (req, res) => { //endpoint to get all matched or not users &/ filtered by skills or category or keyword.
   
   
-  const {  field, category, keyword } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
+  const {  field, category, keyword,skills, needs, excludeUserId } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
 
-
-  const {skills, needs, excludeUserId} = req.body; // when a user is logged in and has skills and needs
 
   console.log("req.query", req.query);
-  console.log("req.body", req.body);
+
   
   if (field !== undefined && category === undefined && keyword === undefined && Object.keys(req.query).length === 1 && Object.keys(req.body).length === 0) {
     return res.status(400).json({ message: 'If field parameter is provided, please include additional filters like category, keyword, or body' });
@@ -27,34 +25,28 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
       return res.json(user);
     }
   };
-  
-
   if (skills || needs) {
-    if (skills && !needs) {
-      try {
-        const users = await User.find({ needs: { $in: skills }, _id: { $ne: excludeUserId } }).populate("skills needs");
-        checkUser(users, res);
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-    } else if (needs && !skills) {
-      try {
-        const users = await User.find({ skills: { $in: needs }, _id: { $ne: excludeUserId } }).populate("skills needs");
-        checkUser(users, res);
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-    } else if (skills && needs) {
-      try {
-        const users = await User.find({ skills: { $in: needs }, needs: { $in: skills }, _id: { $ne: excludeUserId } }).populate("skills needs");
-        checkUser(users, res);
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-    }
-  }else { // If the user chooses to search for users by category, field or keyword:
+    try {
+      let query = { _id: { $ne: excludeUserId } };
   
-
+      if (skills && !needs) {
+        query.$or = [{ needs: { $in: skills } }];
+      } else if (needs && !skills) {
+        query.$or = [{ skills: { $in: needs } }];
+      } else if (skills && needs) {
+        query.$or = [
+          { needs: { $in: skills } },
+          { skills: { $in: needs } },
+        ];
+      }
+  
+      const users = await User.find(query).populate("skills needs");
+      checkUser(users, res);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }else { 
+    // If the user chooses to search for users by category, field or keyword:
 
   if (!category && !keyword && !req.body) {
     return res.status(400).json({ message: 'Please provide a filter' });
@@ -509,7 +501,7 @@ export const updateUser = async (req, res) => {
   const {firstName, lastName, email, location, skills, needs, visibility} = req.body;
   let imageUrl = '';
 
-
+  console.log("req.file", req.file);
 
   try {
     let imageUrl = '';
@@ -533,9 +525,9 @@ export const updateUser = async (req, res) => {
 
     const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility, img: imageUrl}, {new: true}).populate('skills needs');
 
-    console.log("updated user", user)
     res.status(200).json(user);
   } catch (error) {
+    console.log("error", error);
     res.status(500).json({ message: error.message });
   }
 
