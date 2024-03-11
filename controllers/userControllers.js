@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 const secretToken = process.env.SECRET_TOKEN;
 
 const generateToken = (data) => {
-  return jwt.sign(data, secretToken, {expiresIn: '1800s'})
+  return jwt.sign(data, secretToken, {expiresIn: '5h'})
 }
 
 
@@ -15,10 +15,10 @@ const generateToken = (data) => {
 export const getUsers = async (req, res) => { //endpoint to get all matched or not users &/ filtered by skills or category or keyword.
   const excludeUserId = req.user.id;
   
-  const {  field, category, keyword,skills, needs} = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
-
+  const {  field, category, keyword, skills, needs} = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
 
   console.log("req.query", req.query);
+
 
   
   if (field !== undefined && category === undefined && keyword === undefined && Object.keys(req.query).length === 1 && Object.keys(req.body).length === 0) {
@@ -252,7 +252,6 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           }else if (field === 'needs') {
             otherField = 'skills';
           }
-          console.log(field, otherField, category)
           const pipeline = [
             {
               $lookup: {
@@ -534,7 +533,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   }else {
     // The case if there is no category, field or keyword and we just want to get all users:
       try {
-      const users = await User.find().populate("skills needs");
+        const users = await User.find({ _id: { $ne: excludeUserId } }).populate("skills needs"); // find excluding the current user
       checkUser(users ,res);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -588,7 +587,6 @@ export const updateUser = async (req, res) => {
   const needs = JSON.parse(req.body.needs);
   let imageUrl = '';
 
-  console.log("req.file", req.file);
 
   try {
     let imageUrl = '';
