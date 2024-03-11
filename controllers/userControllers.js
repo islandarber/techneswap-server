@@ -1,13 +1,21 @@
 import User from '../models/User.js';
 import cloudinary from '../db/configCloudinary.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
+
+const secretToken = process.env.SECRET_TOKEN;
+
+const generateToken = (data) => {
+  return jwt.sign(data, secretToken, {expiresIn: '1800s'})
+}
 
 
 
 export const getUsers = async (req, res) => { //endpoint to get all matched or not users &/ filtered by skills or category or keyword.
+  const excludeUserId = req.user.id;
   
-  
-  const {  field, category, keyword,skills, needs, excludeUserId } = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
+  const {  field, category, keyword,skills, needs} = req.query; // categories are Tech, Languages , field is either skills or needs and keyword is the search term.
 
 
   console.log("req.query", req.query);
@@ -100,6 +108,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
             },
             {
               $match:  { // We are using the match operator to match the populated field with the keyword
+                _id: { $ne: excludeUserId },
                 $or: [
                   { firstName: { $regex: keyword, $options: 'i' } },
                   { lastName: { $regex: keyword, $options: 'i' } },
@@ -184,6 +193,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           },
           {
             $match: {
+              _id: { $ne: excludeUserId },
               $or: [
                 { firstName: { $regex: keyword, $options: 'i' } },
                 { lastName: { $regex: keyword, $options: 'i' } },
@@ -270,6 +280,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
             },
             {
               $match: {
+                _id: { $ne: excludeUserId },
                   'populatedfieldCategory': { $elemMatch: { 'name': category } }
 
               }
@@ -337,6 +348,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           },
           {
             $match: {
+              _id: { $ne: excludeUserId },
               $or: [
                 { firstName: { $regex: keyword, $options: 'i' } },
                 { lastName: { $regex: keyword, $options: 'i' } },
@@ -412,6 +424,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
             $match: {
               $and: [
                 { 'populatedFieldCategory.name': category },
+                {_id: { $ne: excludeUserId }},
                 {
                   $or: [
                     { firstName: { $regex: keyword, $options: 'i' } },
@@ -483,6 +496,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           }},
           {
             $match: {
+              _id: { $ne: excludeUserId },
               $or: [
                 { 'populatedSkillsCategory.name': category },
                 { 'populatedNeedsCategory.name': category },
@@ -529,10 +543,28 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
 };
 
 export const getUser = async (req, res) => { //endpoint to get a single user
+  const { id } = req.user;
   try {
-    const { id } = req.params;
     const user = await User.findById(id).populate("skills needs");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    } else {
     res.json(user);
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+export const getUserById = async (req, res) => { //endpoint to get a single user by id
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id).populate("skills needs");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    } else {
+    res.json(user);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -541,7 +573,8 @@ export const getUser = async (req, res) => { //endpoint to get a single user
 export const createUser = async (req, res) => {
   const {firstName, lastName, email, password} = req.body;
   try {
-    const user = await User.create({firstName, lastName, email, password});
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({firstName, lastName, email, password: hashedPassword});
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -549,7 +582,7 @@ export const createUser = async (req, res) => {
 }//endpoint to create a user
 
 export const updateUser = async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.user;
   const {firstName, lastName, email, location, description, visibility, img} = req.body;
   const skills = JSON.parse(req.body.skills);
   const needs = JSON.parse(req.body.needs);
@@ -595,12 +628,15 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
-    if (user.password !== password) {
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    res.status(200).json(user);
+    const token = generateToken({ id: user._id, email: user.email });
+
+    res.status(200).json({ token, user });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
