@@ -242,7 +242,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           }else if (field === 'needs') {
             otherField = 'skills';
           }
-          
+          console.log(field, otherField, category)
           const pipeline = [
             {
               $lookup: {
@@ -274,28 +274,28 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
 
               }
             },
-            // {
-            //   $project: {
-            //     _id: 1,
-            //     firstName: 1,
-            //     lastName: 1,
-            //     location: 1,
-            //     [field]: {
-            //       $map: {
-            //         input: `$populatedField1`,
-            //         as: `${field}`,
-            //         in: `$$${field}.name`,
-            //       },
-            //     },
-            //     [otherField]: {
-            //       $map: {
-            //         input: `$populatedField2`,
-            //         as: `${otherField}`,
-            //         in: `$$${otherField}.name`,
-            //       },
-            //     },
-            //   },
-            // },
+            {
+              $project: {
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+                location: 1,
+                [field]: {
+                  $map: {
+                    input: `$populatedfield1`,
+                    as: `${field}`,
+                    in: `$$${field}.name`,
+                  },
+                },
+                [otherField]: {
+                  $map: {
+                    input: `$populatedfield2`,
+                    as: `${otherField}`,
+                    in: `$$${otherField}.name`,
+                  },
+                },
+              },
+            },
           ];
 
            const users = await User.aggregate(pipeline);
@@ -550,7 +550,7 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const {firstName, lastName, email, location, visibility} = req.body;
+  const {firstName, lastName, email, location, description, visibility, img} = req.body;
   const skills = JSON.parse(req.body.skills);
   const needs = JSON.parse(req.body.needs);
   let imageUrl = '';
@@ -577,7 +577,7 @@ export const updateUser = async (req, res) => {
       imageUrl = result.url; 
   }
 
-    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility, img: imageUrl}, {new: true}).populate('skills needs');
+    const user = await User.findByIdAndUpdate({_id: id}, {firstName, lastName, email, location, skills, needs, visibility, description, img: req.file ? imageUrl : img}, {new: true}).populate('skills needs');
 
     res.status(200).json(user);
   } catch (error) {
