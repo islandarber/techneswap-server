@@ -1,6 +1,14 @@
 import User from '../models/User.js';
 import cloudinary from '../db/configCloudinary.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
+
+const secretToken = process.env.SECRET_TOKEN;
+
+const generateToken = (data) => {
+  return jwt.sign(data, secretToken, { expiresIn: '1800s' });
+};
 
 
 
@@ -541,7 +549,8 @@ export const getUser = async (req, res) => { //endpoint to get a single user
 export const createUser = async (req, res) => {
   const {firstName, lastName, email, password} = req.body;
   try {
-    const user = await User.create({firstName, lastName, email, password});
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({firstName, lastName, email, password: hashedPassword});
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -595,12 +604,15 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
-    if (user.password !== password) {
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    res.status(200).json(user);
+    const token = generateToken({ id: user._id, email: user.email });
+
+    res.status(200).json({ token, user });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
