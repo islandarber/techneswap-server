@@ -126,6 +126,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                 firstName: 1,
                 lastName: 1,
                 location: 1,
+                img: 1,
                 skills: {
                   $map: {
                     input: '$populatedfield',
@@ -214,6 +215,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
               firstName: 1,
               lastName: 1,
               location: 1,
+              img: 1,
               skills: {
                 $map: {
                   input: '$populatedSkills',
@@ -294,6 +296,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                 firstName: 1,
                 lastName: 1,
                 location: 1,
+                img: 1,
                 [field]: {
                   $map: {
                     input: `$populatedfield1`,
@@ -369,6 +372,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
               firstName: 1,
               lastName: 1,
               location: 1,
+              img: 1,
               skills: {
                 $map: {
                   input: '$populatedSkills',
@@ -447,6 +451,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
               firstName: 1,
               lastName: 1,
               location: 1,
+              img: 1,
               [field]: {
                 $map: {
                   input: `$populatedField1`,
@@ -515,6 +520,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
               firstName: 1,
               lastName: 1,
               location: 1,
+              img: 1,
               skills: {
                 $map: {
                   input: '$populatedSkills',
