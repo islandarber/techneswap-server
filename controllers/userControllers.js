@@ -109,6 +109,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
             {
               $match:  { // We are using the match operator to match the populated field with the keyword
                 _id: { $ne: excludeUserId },
+                visibility:true,
                 $or: [
                   { firstName: { $regex: keyword, $options: 'i' } },
                   { lastName: { $regex: keyword, $options: 'i' } },
@@ -194,6 +195,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           {
             $match: {
               _id: { $ne: excludeUserId },
+              visibility:true,
               $or: [
                 { firstName: { $regex: keyword, $options: 'i' } },
                 { lastName: { $regex: keyword, $options: 'i' } },
@@ -280,7 +282,9 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
             {
               $match: {
                 _id: { $ne: excludeUserId },
-                  'populatedfieldCategory': { $elemMatch: { 'name': category } }
+                'populatedfieldCategory': { $elemMatch: { 'name': category } },
+                visibility:true
+
 
               }
             },
@@ -348,6 +352,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           {
             $match: {
               _id: { $ne: excludeUserId },
+              visibility:true,
               $or: [
                 { firstName: { $regex: keyword, $options: 'i' } },
                 { lastName: { $regex: keyword, $options: 'i' } },
@@ -424,6 +429,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
               $and: [
                 { 'populatedFieldCategory.name': category },
                 {_id: { $ne: excludeUserId }},
+                { visibility:true },
                 {
                   $or: [
                     { firstName: { $regex: keyword, $options: 'i' } },
@@ -496,6 +502,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
           {
             $match: {
               _id: { $ne: excludeUserId },
+              visibility:true,
               $or: [
                 { 'populatedSkillsCategory.name': category },
                 { 'populatedNeedsCategory.name': category },
@@ -533,7 +540,7 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
   }else {
     // The case if there is no category, field or keyword and we just want to get all users:
       try {
-        const users = await User.find({ _id: { $ne: excludeUserId } }).populate("skills needs"); // find excluding the current user
+        const users = await User.find({ _id: { $ne: excludeUserId }, visibility: true}).populate("skills needs"); // find excluding the current user
       checkUser(users ,res);
     } catch (error) {
       res.status(500).json({ message: error.message });
