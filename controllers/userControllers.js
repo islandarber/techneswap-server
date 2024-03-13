@@ -440,6 +440,8 @@ export const getUsers = async (req, res) => { //endpoint to get all matched or n
                     { lastName: { $regex: keyword, $options: 'i' } },
                     { email: { $regex: keyword, $options: 'i' } },
                     { location: { $regex: keyword, $options: 'i' } },
+                    { 'populatedField1.name': { $regex: keyword, $options: 'i' } },
+                    { 'populatedField2.name': { $regex: keyword, $options: 'i' } },
                   ],
                 },
               ],
